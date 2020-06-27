@@ -9,7 +9,7 @@ ENTITY register4 IS
 	PORT (
 		dI: IN std_logic_vector(3 downto 0);
 		clkI: IN std_logic;
-		qI: OUT std_logic_vector(3 downto 0)
+		qO: OUT std_logic_vector(3 downto 0)
 	);
 END register4;
 ARCHITECTURE s95 OF register4 IS
@@ -20,6 +20,6 @@ BEGIN
 		clkr => VCC,
 		ser => GND,
 		d => dI,
-		q => qI
+		q => qO
 	);
 END s95;
