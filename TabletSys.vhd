@@ -2,6 +2,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
+LIBRARY altera;
+USE altera.maxplus2.all;
+USE work.Comparators.all;
+USE work.Constants.all;
+USE work.Counters.all;
+
 --modeK切换模式，分别为：待机、设定每瓶十位、设定每瓶个位、准备就绪--
 --setK：每按一次当前设定位+1（设十位/个位时）--
 --startpulse:状态为就绪时，按下pulse开始--
@@ -42,8 +48,8 @@ END TabletSys;
 
 architecture Sys of TabletSys is
 
-    signal status: std_logic_vector(1 downto 0);--指示状态--
-    signal num: std_logic_vector(3 downto 0);--暂存输入数--
+	signal status: std_logic_vector(1 downto 0);--指示状态--
+	signal num: std_logic_vector(3 downto 0);--暂存输入数--
 	signal PillsPerBottleH: std_logic_vector(3 downto 0);--每瓶片数，2个BCD--
 	signal PillsPerBottleL: std_logic_vector(3 downto 0);--每瓶片数，2个BCD--
 	signal PillsInBottleH: std_logic_vector(3 downto 0);--已装每瓶片数，2个BCD--
@@ -56,25 +62,24 @@ architecture Sys of TabletSys is
 	signal BottleReady: std_logic := '1';
 	signal haltStatus: std_logic :='0';
 	signal BottleFull: std_logic :='0';
-		
 begin
 
 
-    process(modeK)--切换模式--
-    begin 
-     if(modeK'event and modeK='1') then --切换输入状态
-      case status is 
-        when "00"=>status<="01"; --等待有效输入--
-        when "01"=>status<="10"; --每瓶十位--
-        when "10"=>status<="11"; --每瓶个位--
-        when "11"=>status<="00"; --准备就绪--
-      end case;
-     end if;
+	process(modeK)--切换模式--
+	begin 
+	 if(modeK'event and modeK='1') then --切换输入状态
+	  case status is 
+		when "00"=>status<="01"; --等待有效输入--
+		when "01"=>status<="10"; --每瓶十位--
+		when "10"=>status<="11"; --每瓶个位--
+		when "11"=>status<="00"; --准备就绪--
+	  end case;
+	 end if;
 	end process;
 	
 	
 
-    process(setK,modeK,status)--输入数值--
+	process(setK,modeK,status)--输入数值--
 	begin
 		--case modeK is
 		--	when '1'=>
@@ -83,10 +88,10 @@ begin
 		--		end if;
 		--	when '0'=>
 				if(setK'event and setK='1') then 
-           			if(num="1001") then --超过9时回0--
+		   			if(num="1001") then --超过9时回0--
 					num<="0000";
 					else
-             		num<=num+1;    
+			 		num<=num+1;
 					end if;
 				end if;
 		--	when others=>NULL;
@@ -95,17 +100,17 @@ begin
 
 
 	process(num)--将暂存数放入每瓶片数寄存器--
-    begin
-        case status is
+	begin
+		case status is
 			when "01"=>--输入十位状态--
 				if(num <= "0100") then--十位为5以上时不接受，最大片数49----不加底下兜底时，为甚么0101会被赋进去？？
 					PillsPerBottleH<=num;--暂存数打入每瓶片数寄存器高位--
 				else 
 					PillsPerBottleH<="0100";--兜下来，不允许增加
 				end if;
-            when "10"=>PillsPerBottleL<=num;--暂存数打入每瓶片数寄存器低位--
-            when others=>NULL;--其他情况不改变
-    end case;
+			when "10"=>PillsPerBottleL<=num;--暂存数打入每瓶片数寄存器低位--
+			when others=>NULL;--其他情况不改变
+	end case;
 	end process;
 	
 	
@@ -158,8 +163,31 @@ begin
 		end if;
 	end process;
 
-    --装片过程处理--
-	process(tabI,nextK)
+	PillsInBottleCounter: counterD8 PORT MAP(
+		clkI => tabI and started and not(finished or nextK or haltK),
+		clrKn => started,
+		qO(7 downto 4) => PillsInBottleH,
+		qO(3 downto 0) => PillsInBottleL
+	);
+	
+	NextBottleJudge: comparator8 PORT MAP(
+		dataa(7 downto 4) => PillsInBottleH,
+		dataa(3 downto 0) => PillsInBottleL,
+		datab(7 downto 4) => PillsPerBottleH,
+		datab(3 downto 0) => PillsPerBottleL,
+		aeb => BottleFull
+	);
+	
+	PillsCounter: counterDC PORT MAP(
+		clkI => tabI and started and not(finished or nextK or haltK),
+		clrKn => started,
+		qO(11 downto 8) => PillsCountH,
+		qO(7 downto 4) => PillsCountM,
+		qO(3 downto 0) => PillsCountL
+	);
+
+	--装片过程处理--
+	process(tabI)
 	variable BottlesCount: integer range 0 to 19 :=0 ;--瓶数计数器，达到上限停止，上限19瓶--
 	begin
 		if(haltStatus='0') then--急停管理
@@ -171,56 +199,58 @@ begin
 					if(started='1' and status="11") then
 					--装片进行中--
 						--if(BottleReady='1') then
-						if(not(PillsInBottleL = PillsPerBottleL and PillsInBottleH = PillsPerBottleH and BottlesCount = 18)) then--非最后一瓶最后一片情况--
+						--if(not(PillsInBottleL = PillsPerBottleL and PillsInBottleH = PillsPerBottleH and BottlesCount = 18)) then-- --非最后一瓶最后一片情况--
 							--总计数器--
-							if(PillsCountL = "1001" and PillsCountM < "1001") then --总计数个位为9时,且十位不为9时--
-								PillsCountM<=PillsCountM+1;--十位进位--
-								PillsCountL<="0000";--个位置0--
-							elsif(PillsCountL = "1001" and PillsCountM = "1001") then --总计数个位为9且十位也为9时--
-								PillsCountL<="0000";--个位置0--
-								PillsCountM<="0000";--十位置0--
-								PillsCountH<=PillsCountH+1;--百位进位--
-							else --其他情况，个位+1--
-								PillsCountL<=PillsCountL+1;
-							end if;
+							--if(PillsCountL = "1001" and PillsCountM < "1001") then-- --总计数个位为9时,且十位不为9时--
+								--PillsCountM<=PillsCountM+1;-- --十位进位--
+								--PillsCountL<="0000";-- --个位置0--
+							--elsif(PillsCountL = "1001" and PillsCountM = "1001") then-- --总计数个位为9且十位也为9时--
+								--PillsCountL<="0000";-- --个位置0--
+								--PillsCountM<="0000";-- --十位置0--
+								--PillsCountH<=PillsCountH+1;-- --百位进位--
+							--else-- --其他情况，个位+1--
+								--PillsCountL<=PillsCountL+1;--
+							--end if;--
 							--总计数器--
-						else 
+						--else-- 
 								--finished<='1';
-						end if;
+						--end if;--
 
 							--单瓶计数器--
-						if(PillsInBottleH < PillsPerBottleH ) then --未满时装瓶,比十位--
-							if(PillsInBottleL = "1001") then--瓶中计数个位为9时--
-								PillsInBottleH<=PillsInBottleH+1;--十位进位--
-								PillsInBottleL<="0000";--个位置0--
-							else --正常时--
-								PillsInBottleL<=PillsInBottleL+1;--个位加一--
+						--if(PillsInBottleH < PillsPerBottleH ) then --未满时装瓶,比十位--
+							--if(PillsInBottleL = "1001") then--瓶中计数个位为9时--
+								--PillsInBottleH<=PillsInBottleH+1;--十位进位--
+								--PillsInBottleL<="0000";--个位置0--
+							--else --正常时--
+								--PillsInBottleL<=PillsInBottleL+1;--个位加一--
+							--end if;
+							--BottleFull<='0';--瓶未满--
+						--else
+							--if( PillsInBottleL < PillsPerBottleL ) then
+								--BottleFull<='0';--瓶未满--
+								--PillsInBottleL<=PillsInBottleL+1;--个位+1
+							--else --瓶满状态--
+							if (BottleFull = VCC) then
+								--if(BottlesCount /= 18) then
+									--PillsInBottleH<="0000";
+									--PillsInBottleL<="0001";--kenengyaogai !!--
+								--end if;
+								BottlesCount:=BottlesCount+1;--已装瓶计数+1
 							end if;
-							BottleFull<='0';--瓶未满--
-						else
-							if( PillsInBottleL < PillsPerBottleL ) then
-								BottleFull<='0';--瓶未满--
-								PillsInBottleL<=PillsInBottleL+1;--个位+1
-							else --瓶满状态--
-								if(BottlesCount /= 18) then
-									PillsInBottleH<="0000";
-									PillsInBottleL<="0001";--kenengyaogai !!--
-								end if;
-									BottlesCount:=BottlesCount+1;--已装瓶计数+1
 									--BUG:最后会装到总数多一片--
 									--BottleFull<='1';--瓶满--
-							end if;
-						end if;
+							--end if;
+						--end if;
 							--单瓶计数器--
 						--end if;
-					end if;	
+					end if;
 				end if;
 			end if;
 		end if;
 		
 	end process;
 
-
+	--强制退瓶--
 	
 	--异步输出--
 	Process(status,PillsPerBottleH,PillsPerBottleL,PillsInBottleL,PillsCountL,num)
