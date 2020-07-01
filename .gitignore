@@ -4,8 +4,10 @@
 /simulation/
 *.bak
 *.bat
+*.cmp
 *.temp
 *.qdf
+*.qip
 *.qpf
 *.qsf
 *.qws
