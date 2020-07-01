@@ -35,6 +35,7 @@ ENTITY TabletSys IS
 		--stat, err: OUT std_logic;	--状态表示，持续输出，至LED--
 		
 		redLED, greenLED: OUT std_logic;
+		
 
 		--PillsPerBottleL: buffer std_logic_vector(3 downto 0);--每瓶片数，2个BCD--
 		--BottleReady: buffer std_logic := '1';
@@ -60,7 +61,6 @@ architecture Sys of TabletSys is
 	signal PillsCountL: std_logic_vector(3 downto 0);--总装片数计数器---
 	signal finished: std_logic :='0';--完成Flag--
 	signal BottleReady: std_logic := '1';
-	signal haltStatus: std_logic :='0';
 	signal BottleFull: std_logic :='0';
 begin
 
@@ -114,15 +114,6 @@ begin
 	end process;
 	
 	
-	process(haltK) --急停状态管理--
-	begin
-		if(haltK'event and haltK='1') then
-			case haltStatus is
-				when '0'=>haltStatus<='1';
-				when '1'=>haltStatus<='0';
-			end case;
-		end if;
-	end process;
 
 	--process(nextK,BottleReady,BottleFull)--换瓶状态管理--
 	--begin
@@ -151,15 +142,13 @@ begin
 
 	Process(finished,num,status,started)--红/绿灯控制
 	begin
-		if(finished='1' or (num>"0100" and status="01") or haltStatus='1' ) then
+		redLED<='0';
+		greenLED<='0';	
+		if(finished='1' or (num>"0100" and status="01") or (haltK = VCC)) then
 			redLED<='1';
-			greenLED<='0';
-		elsif(started='1' and status="11" and finished='0' ) then
-			redLED<='0';
+		end if;
+		if(started='1' and status="11" and finished='0' ) then
 			greenLED<='1';
-		else 
-			redLED<='0';
-			greenLED<='0';
 		end if;
 	end process;
 
@@ -185,12 +174,14 @@ begin
 		qO(7 downto 4) => PillsCountM,
 		qO(3 downto 0) => PillsCountL
 	);
+	
+	botO <= BottleFull or nextK;
 
 	--装片过程处理--
 	process(tabI)
 	variable BottlesCount: integer range 0 to 19 :=0 ;--瓶数计数器，达到上限停止，上限19瓶--
 	begin
-		if(haltStatus='0') then--急停管理
+		if(haltK = GND) then--急停管理
 			if(BottlesCount = 19 ) then --总瓶数到达停止--
 				finished<='1';
 			else --装瓶进行--
@@ -198,59 +189,15 @@ begin
 				if(tabI'event and tabI = '1') then --开始装瓶--
 					if(started='1' and status="11") then
 					--装片进行中--
-						--if(BottleReady='1') then
-						--if(not(PillsInBottleL = PillsPerBottleL and PillsInBottleH = PillsPerBottleH and BottlesCount = 18)) then-- --非最后一瓶最后一片情况--
-							--总计数器--
-							--if(PillsCountL = "1001" and PillsCountM < "1001") then-- --总计数个位为9时,且十位不为9时--
-								--PillsCountM<=PillsCountM+1;-- --十位进位--
-								--PillsCountL<="0000";-- --个位置0--
-							--elsif(PillsCountL = "1001" and PillsCountM = "1001") then-- --总计数个位为9且十位也为9时--
-								--PillsCountL<="0000";-- --个位置0--
-								--PillsCountM<="0000";-- --十位置0--
-								--PillsCountH<=PillsCountH+1;-- --百位进位--
-							--else-- --其他情况，个位+1--
-								--PillsCountL<=PillsCountL+1;--
-							--end if;--
-							--总计数器--
-						--else-- 
-								--finished<='1';
-						--end if;--
-
-							--单瓶计数器--
-						--if(PillsInBottleH < PillsPerBottleH ) then --未满时装瓶,比十位--
-							--if(PillsInBottleL = "1001") then--瓶中计数个位为9时--
-								--PillsInBottleH<=PillsInBottleH+1;--十位进位--
-								--PillsInBottleL<="0000";--个位置0--
-							--else --正常时--
-								--PillsInBottleL<=PillsInBottleL+1;--个位加一--
-							--end if;
-							--BottleFull<='0';--瓶未满--
-						--else
-							--if( PillsInBottleL < PillsPerBottleL ) then
-								--BottleFull<='0';--瓶未满--
-								--PillsInBottleL<=PillsInBottleL+1;--个位+1
-							--else --瓶满状态--
-							if (BottleFull = VCC) then
-								--if(BottlesCount /= 18) then
-									--PillsInBottleH<="0000";
-									--PillsInBottleL<="0001";--kenengyaogai !!--
-								--end if;
-								BottlesCount:=BottlesCount+1;--已装瓶计数+1
-							end if;
-									--BUG:最后会装到总数多一片--
-									--BottleFull<='1';--瓶满--
-							--end if;
-						--end if;
-							--单瓶计数器--
-						--end if;
+						if (BottleFull = VCC) then
+							BottlesCount:=BottlesCount+1;--已装瓶计数+1
+						end if;
 					end if;
 				end if;
 			end if;
 		end if;
 		
 	end process;
-
-	--强制退瓶--
 	
 	--异步输出--
 	Process(status,PillsPerBottleH,PillsPerBottleL,PillsInBottleL,PillsCountL,num)
