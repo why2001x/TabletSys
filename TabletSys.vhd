@@ -156,7 +156,7 @@ begin
 
 	BottleCounter: counterD8 PORT MAP(
 		clkI => BottleFull and started and not(finished or nextK or haltK),
-		clrKn => '1',
+		clrKn => started,
 		qO(7 downto 4) => BottlesCountH,
 		qO(3 downto 0) => BottlesCountL
 	);
@@ -209,7 +209,7 @@ begin
 	end process;
 	
 	--异步输出--
-	Process(status,PillsPerBottleH,PillsPerBottleL,PillsInBottleL,PillsCountL,num)
+	Process(status,PillsPerBottleH,BottlesCountL,PillsInBottleL,PillsCountL)
 	begin
 		case status is
 			--when "00"=>numO<="11111111111111111111"; --等待有效输入--
