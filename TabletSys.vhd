@@ -36,7 +36,7 @@ ENTITY TabletSys IS
 		
 		redLED, greenLED: OUT std_logic;
 		
-
+		displaytoggle: IN std_logic;--切换显示模式--
 		--PillsPerBottleL: buffer std_logic_vector(3 downto 0);--每瓶片数，2个BCD--
 		--BottleReady: buffer std_logic := '1';
 		--BottleFull: buffer std_logic :='0';
@@ -59,6 +59,8 @@ architecture Sys of TabletSys is
 	signal PillsCountH: std_logic_vector(3 downto 0);--总装片数计数器---
 	signal PillsCountM: std_logic_vector(3 downto 0);--总装片数计数器---
 	signal PillsCountL: std_logic_vector(3 downto 0);--总装片数计数器---
+	signal BottlesCountH: std_logic_vector(3 downto 0);--目前已装瓶数--
+	signal BottlesCountL: std_logic_vector(3 downto 0);--目前已装瓶数--
 	signal finished: std_logic :='0';--完成Flag--
 	signal BottleReady: std_logic := '1';
 	signal BottleFull: std_logic :='0';
@@ -152,9 +154,16 @@ begin
 		end if;
 	end process;
 
+	BottleCounter: counterD8 PORT MAP(
+		clkI => BottleFull and started and not(finished or nextK or haltK),
+		clrKn => '1',
+		qO(7 downto 4) => BottlesCountH,
+		qO(3 downto 0) => BottlesCountL
+	);
+	
 	PillsInBottleCounter: counterD8 PORT MAP(
 		clkI => tabI and started and not(finished or nextK or haltK),
-		clrKn => started,
+		clrKn => started and not(BottleFull or nextK),
 		qO(7 downto 4) => PillsInBottleH,
 		qO(3 downto 0) => PillsInBottleL
 	);
@@ -207,11 +216,19 @@ begin
 			when "01"=>numO1<=PillsPerBottleH; --输入每瓶片数十位，超出时亮红灯并按最大十位存入，但此时仍可见--
 			when "10"=>numO2<=PillsPerBottleL; --输入每瓶片数个位--
 			when "11"=>--前2个是已装每瓶片数计数，后3个是总装片数计数--
-				numO1<=PillsInBottleH;
-				numO2<=PillsInBottleL;
-				numO3<=PillsCountH;
-				numO4<=PillsCountM;
-				numO5<=PillsCountL;
+				if(Displaytoggle='0') then
+					numO1<=BottlesCountH;
+					numO2<=BottlesCountL;
+					numO3<="1111";
+					numO4<=PillsInBottleH;
+					numO5<=PillsInBottleL;
+				else
+					numO1<="1111";
+					numO2<="1111";
+					numO3<=PillsCountH;
+					numO4<=PillsCountM;
+					numO5<=PillsCountL;
+				end if;
 			when others=>null;
 		end case;
 	end process;
