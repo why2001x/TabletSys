@@ -42,9 +42,9 @@ USE lpm.all;
 ENTITY counterD1 IS
 	PORT
 	(
-		aclr		: IN STD_LOGIC ;
-		clock		: IN STD_LOGIC ;
-		q		: OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
+		clkI	: IN STD_LOGIC ;
+		clrKn	: IN STD_LOGIC ;
+		qO		: OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
 	);
 END counterD1;
 
@@ -63,14 +63,14 @@ ARCHITECTURE SYN OF counterd1 IS
 		lpm_width		: NATURAL
 	);
 	PORT (
-			aclr	: IN STD_LOGIC ;
-			clock	: IN STD_LOGIC ;
-			q	: OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
+			clkI	: IN STD_LOGIC ;
+			clrKn	: IN STD_LOGIC ;
+			qO		: OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
 	);
 	END COMPONENT;
 
 BEGIN
-	q    <= sub_wire0(0 DOWNTO 0);
+	qO   <= sub_wire0(0 DOWNTO 0);
 
 	LPM_COUNTER_component : LPM_COUNTER
 	GENERIC MAP (
@@ -80,8 +80,8 @@ BEGIN
 		lpm_width => 1
 	)
 	PORT MAP (
-		aclr => aclr,
-		clock => clock,
+		aclr => not clrKn,
+		clock => clkI,
 		q => sub_wire0
 	);
 

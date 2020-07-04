@@ -45,7 +45,9 @@ ENTITY TabletSys IS
 
 		haltK, nextK: IN std_logic;	--中止开关/换瓶脉冲，手动输入，强制干涉--
 		
-		clkHI: IN std_logic --高频时钟输入(CP1)--
+		clkHI: IN std_logic; --高频时钟输入(CP1)--
+		
+		testOnly: OUT std_logic_vector(0 downto 0)
 	);
 END TabletSys;
 
@@ -54,20 +56,12 @@ architecture Sys of TabletSys is
 	signal status: std_logic_vector(1 downto 0);--指示状态--
 	signal num: std_logic_vector(3 downto 0);--暂存输入数--
 	
-	signal PillsPerBottleH: std_logic_vector(3 downto 0);--每瓶片数，2个BCD--
-	signal PillsPerBottleL: std_logic_vector(3 downto 0);--每瓶片数，2个BCD--
-	signal PillsInBottleH: std_logic_vector(3 downto 0);--已装每瓶片数，2个BCD--
-	signal PillsInBottleL: std_logic_vector(3 downto 0);--已装每瓶片数，2个BCD--
+	signal PillsPerBottle: BCDs(2 downto 0);--每瓶片数--
+	signal PillsInBottle: BCDs(2 downto 0);--已装每瓶片数--
+	signal PillsCount: BCDs(4 downto 0);--总装片数计数器---
 	
-
-	
-	signal PillsCountH: std_logic_vector(3 downto 0);--总装片数计数器---
-	signal PillsCountM: std_logic_vector(3 downto 0);--总装片数计数器---
-	signal PillsCountL: std_logic_vector(3 downto 0);--总装片数计数器---
-	signal BottlesCountH: std_logic_vector(3 downto 0);--目前已装瓶数--
-	signal BottlesCountL: std_logic_vector(3 downto 0);--目前已装瓶数--
-	signal BottlesLimitH: std_logic_vector(3 downto 0);--最大可装瓶数--
-	signal BottlesLimitL: std_logic_vector(3 downto 0);--最大可装瓶数--
+	signal BottlesCount: BCDs(2 downto 0);--目前已装瓶数--
+	signal BottlesLimit: BCDs(2 downto 0);--最大可装瓶数--
 	
 	signal started: std_logic := '0';--开始Flag--
 	signal finished: std_logic := '0';--完成Flag--
@@ -78,6 +72,7 @@ architecture Sys of TabletSys is
 	signal Flash: std_logic_vector(3 downto 0);
 begin
 
+	testOnly(0) <= BottleRequest;
 
 	process(modeK)--切换模式--
 	begin 
@@ -99,7 +94,7 @@ begin
 
 	bottlePrepare: PPG PORT MAP(
 		clkI => clkHI,
-		pI => clkI and not BottleReady,
+		pI => not BottleReady,
 		qO => BottleRequest
 	);
 	process(setK)--将暂存数放入每瓶片数寄存器--
@@ -107,20 +102,20 @@ begin
 		case status is
 			when "00"=>
 				if(num <= "0001") then--十位为1以上时不接受，最大瓶数19--
-					BottlesLimitH<=num;--暂存数打入每瓶片数寄存器高位--
+					BottlesLimit(1)<=num;--暂存数打入每瓶片数寄存器高位--
 				else 
-					BottlesLimitH<="0001";--兜下来，不允许增加
+					BottlesLimit(1)<="0001";--兜下来，不允许增加
 				end if;
 			when "01"=>
-				BottlesLimitL<=num;
+				BottlesLimit(0)<=num;
 			when "10"=>--输入每瓶十位状态--
 				if(num <= "0100") then--十位为5以上时不接受，最大片数49----不加底下兜底时，0101会被赋进去
-					PillsPerBottleH<=num;--暂存数打入每瓶片数寄存器高位--
+					PillsPerBottle(1)<=num;--暂存数打入每瓶片数寄存器高位--
 				else 
-					PillsPerBottleH<="0100";--兜下来，不允许增加
+					PillsPerBottle(1)<="0100";--兜下来，不允许增加
 				end if;
 			when "11"=>
-				PillsPerBottleL<=num;--暂存数打入每瓶片数寄存器低位--
+				PillsPerBottle(0)<=num;--暂存数打入每瓶片数寄存器低位--
 			when others=>NULL;--其他情况不改变
 	end case;
 	end process;
@@ -149,39 +144,39 @@ begin
 	BottleCounter: counterD8 PORT MAP(
 		clkI => BottleFull and started and BottleReady and not(finished or nextK or haltK),
 		clrKn => started,
-		qO(7 downto 4) => BottlesCountH,
-		qO(3 downto 0) => BottlesCountL
+		qO(7 downto 4) => BottlesCount(1),
+		qO(3 downto 0) => BottlesCount(0)
 	);
 	
 	PillsInBottleCounter: counterD8 PORT MAP(
 		clkI => tabI and started and BottleReady and not(finished or nextK or haltK),
 		clrKn => started and not(BottleFull or nextK),
-		qO(7 downto 4) => PillsInBottleH,
-		qO(3 downto 0) => PillsInBottleL
+		qO(7 downto 4) => PillsInBottle(1),
+		qO(3 downto 0) => PillsInBottle(0)
 	);
 	
 	NextBottleJudge: comparator8 PORT MAP(
-		dataa(7 downto 4) => PillsInBottleH,
-		dataa(3 downto 0) => PillsInBottleL,
-		datab(7 downto 4) => PillsPerBottleH,
-		datab(3 downto 0) => PillsPerBottleL,
+		dataa(7 downto 4) => PillsInBottle(1),
+		dataa(3 downto 0) => PillsInBottle(0),
+		datab(7 downto 4) => PillsPerBottle(1),
+		datab(3 downto 0) => PillsPerBottle(0),
 		aeb => BottleFull
 	);
 	
 	FinishedJudge: comparator8 PORT MAP(
-		dataa(7 downto 4) => BottlesCountH,
-		dataa(3 downto 0) => BottlesCountL,
-		datab(7 downto 4) => BottlesLimitH,
-		datab(3 downto 0) => BottlesLimitL,
+		dataa(7 downto 4) => BottlesCount(1),
+		dataa(3 downto 0) => BottlesCount(0),
+		datab(7 downto 4) => BottlesLimit(1),
+		datab(3 downto 0) => BottlesLimit(0),
 		aeb => finished
 	);
 	
 	PillsCounter: counterDC PORT MAP(
 		clkI => tabI and started and not(finished or nextK or haltK),
 		clrKn => started,
-		qO(11 downto 8) => PillsCountH,
-		qO(7 downto 4) => PillsCountM,
-		qO(3 downto 0) => PillsCountL
+		qO(11 downto 8) => PillsCount(2),
+		qO(7 downto 4) => PillsCount(1),
+		qO(3 downto 0) => PillsCount(0)
 	);
 	
 	botO <= (started and BottleFull) or nextK or BottleRequest;
@@ -191,35 +186,35 @@ begin
 	
 	--输出--
 	Flash <= (clkI, clkI, clkI, clkI);
-	Process(status,PillsPerBottleH,BottlesCountL,PillsInBottleL,PillsCountL,started)
+	Process(status,PillsPerBottle(1),BottlesCount(0),PillsInBottle(0),PillsCount(0),started)
 	begin
 		case status is
 			when "00"=>--输入瓶数十位--
-				numO1<=BottlesLimitH or Flash;
+				numO1<=BottlesLimit(1) or Flash;
 				numO2<=OFF;
 				numO3<=OFF;
 				numO4<=OFF;
 				numO5<=OFF;
 			when "01"=> --输入瓶数个位--
-				numO2<=BottlesLimitL or Flash;
+				numO2<=BottlesLimit(0) or Flash;
 			when "10"=>
-				numO4<=PillsPerBottleH or Flash; --输入每瓶片数十位--
+				numO4<=PillsPerBottle(1) or Flash; --输入每瓶片数十位--
 			when "11"=>--前2个是已装每瓶片数计数，后3个是总装片数计数--
 				if(started='0') then
-					numO5<=PillsPerBottleL or Flash;
+					numO5<=PillsPerBottle(0) or Flash;
 				else
 					if(Displaytoggle='0') then
-						numO1<=BottlesCountH;
-						numO2<=BottlesCountL;
+						numO1<=BottlesCount(1);
+						numO2<=BottlesCount(0);
 						numO3<=OFF;
-						numO4<=PillsInBottleH;
-						numO5<=PillsInBottleL;
+						numO4<=PillsInBottle(1);
+						numO5<=PillsInBottle(0);
 					else
-						numO1<=OFF;
-						numO2<=OFF;
-						numO3<=PillsCountH;
-						numO4<=PillsCountM;
-						numO5<=PillsCountL;
+						numO1<=PillsCount(4);
+						numO2<=PillsCount(3);
+						numO3<=PillsCount(2);
+						numO4<=PillsCount(1);
+						numO5<=PillsCount(0);
 					end if;
 				end if;
 			when others=>null;
