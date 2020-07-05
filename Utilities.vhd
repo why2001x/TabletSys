@@ -17,11 +17,4 @@ COMPONENT copy4 IS
 	);
 END COMPONENT;
 
-COMPONENT copy8 IS
-	PORT (
-		I: IN std_logic;
-		O: OUT std_logic_vector(7 downto 0)
-	);
-END COMPONENT;
-
 END Utilities;

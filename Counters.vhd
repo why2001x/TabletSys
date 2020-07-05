@@ -31,25 +31,10 @@ COMPONENT counterDB IS
 	);
 END COMPONENT;
 
-COMPONENT counterDC IS
-	PORT (
-		clkI, clrKn: IN std_logic;
-		qO: OUT std_logic_vector(11 downto 0)
-	);
-END COMPONENT;
-
 COMPONENT counterD14 IS
 	PORT (
 		clkI, clrKn: IN std_logic;
 		qO: OUT std_logic_vector(19 downto 0)
-	);
-END COMPONENT;
-
-COMPONENT count_13 IS
-	PORT (
-		clock, sset: IN STD_LOGIC;
-		cout: OUT STD_LOGIC;
-		q: OUT STD_LOGIC_VECTOR (1 DOWNTO 0)
 	);
 END COMPONENT;
 
