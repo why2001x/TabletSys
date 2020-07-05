@@ -92,10 +92,12 @@ begin
 		qO => num
 	);
 
-	bottlePrepare: PPG PORT MAP(
-		clkI => clkHI,
-		pI => not BottleReady,
-		qO => BottleRequest
+	bottlePrepare: dff PORT MAP(
+		PRN => VCC,
+		CLRN => VCC,
+		CLK => clkHI,
+		D => not BottleReady,
+		Q => BottleRequest
 	);
 	process(setK)--将暂存数放入每瓶片数寄存器--
 	begin
@@ -129,17 +131,20 @@ begin
 	end process;
 
 
-	Process(finished,num,status,started)--红/绿灯控制
-	begin
-		redLED<='0';
-		greenLED<='0';	
-		if(finished='1' or (num>"0001" and status="00") or (num>"0100" and status="10") or (haltK = VCC)) then
-			redLED<='1';
-		end if;
-		if(started='1' and status="11" and finished='0' ) then
-			greenLED<='1';
-		end if;
-	end process;
+	redLED <= haltK or finished;
+	greenLED <= (started and not finished);
+
+	--Process(finished,num,status,started)--红/绿灯控制
+	--begin
+	--	redLED<='0';
+	--	greenLED<='0';	
+	--	if(finished='1' or (num>"0001" and status="00") or (num>"0100" and status="10") or (haltK = VCC)) then
+	--		redLED<='1';
+	--	end if;
+	--	if(started='1' and status="11" and finished='0' ) then
+	--		greenLED<='1';
+	--	end if;
+	--end process;
 
 	BottleCounter: counterD8 PORT MAP(
 		clkI => BottleFull and started and BottleReady and not(finished or nextK or haltK),
