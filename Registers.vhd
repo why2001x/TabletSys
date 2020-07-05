@@ -3,27 +3,27 @@ USE ieee.std_logic_1164.all;
 
 PACKAGE Registers IS
 
+COMPONENT register1 IS
+	PORT (
+		dI: IN std_logic_vector(0 downto 0);
+		clkI, clrKn, EN: IN std_logic;
+		qO: OUT std_logic_vector(0 downto 0)
+	);
+END COMPONENT;
+
+COMPONENT register3 IS
+	PORT (
+		dI: IN std_logic_vector(2 downto 0);
+		clkI, clrKn, EN: IN std_logic;
+		qO: OUT std_logic_vector(2 downto 0)
+	);
+END COMPONENT;
+
 COMPONENT register4 IS
 	PORT (
 		dI: IN std_logic_vector(3 downto 0);
-		clkI: IN std_logic;
+		clkI, clrKn, EN: IN std_logic;
 		qO: OUT std_logic_vector(3 downto 0)
-	);
-END COMPONENT;
-
-COMPONENT register8 IS
-	PORT (
-		dI: IN std_logic_vector(7 downto 0);
-		clkI: IN std_logic;
-		qO: OUT std_logic_vector(7 downto 0)
-	);
-END COMPONENT;
-
-COMPONENT registerC IS
-	PORT (
-		dI: IN std_logic_vector(11 downto 0);
-		clkI: IN std_logic;
-		qO: OUT std_logic_vector(11 downto 0)
 	);
 END COMPONENT;
 
