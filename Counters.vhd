@@ -24,17 +24,17 @@ COMPONENT counterD9 IS
 	);
 END COMPONENT;
 
-COMPONENT counterDB IS
+COMPONENT counterDA IS
 	PORT (
 		clkI, clrKn: IN std_logic;
-		qO: OUT std_logic_vector(10 downto 0)
+		qO: OUT std_logic_vector(9 downto 0)
 	);
 END COMPONENT;
 
-COMPONENT counterD14 IS
+COMPONENT counterD12 IS
 	PORT (
 		clkI, clrKn: IN std_logic;
-		qO: OUT std_logic_vector(19 downto 0)
+		qO: OUT std_logic_vector(17 downto 0)
 	);
 END COMPONENT;
 
@@ -45,10 +45,10 @@ COMPONENT count_01 IS
 	);
 END COMPONENT;
 
-COMPONENT count_07 IS
+COMPONENT count_03 IS
 	PORT (
 		aclr, clock: IN std_logic;
-		q: OUT std_logic_vector (2 downto 0)
+		q: OUT std_logic_vector (1 downto 0)
 	);
 END COMPONENT;
 

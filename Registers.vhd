@@ -11,11 +11,11 @@ COMPONENT register1 IS
 	);
 END COMPONENT;
 
-COMPONENT register3 IS
+COMPONENT register2 IS
 	PORT (
-		dI: IN std_logic_vector(2 downto 0);
+		dI: IN std_logic_vector(1 downto 0);
 		clkI, clrKn, EN: IN std_logic;
-		qO: OUT std_logic_vector(2 downto 0)
+		qO: OUT std_logic_vector(1 downto 0)
 	);
 END COMPONENT;
 

@@ -3,13 +3,13 @@ USE ieee.std_logic_1164.all;
 
 USE work.Counters.all;
 
-ENTITY counterD14 IS
+ENTITY counterD12 IS
 	PORT (
 		clkI, clrKn: IN std_logic;
-		qO: OUT std_logic_vector(19 downto 0)
+		qO: OUT std_logic_vector(17 downto 0)
 	);
-END counterD14;
-ARCHITECTURE ph68 OF counterD14 IS
+END counterD12;
+ARCHITECTURE ph68 OF counterD12 IS
 	SIGNAL First: std_logic;
 	SIGNAL Secnd: std_logic;
 BEGIN
@@ -27,9 +27,9 @@ BEGIN
 		qO(6 downto 0) => qO(14 downto 8)
 	);
 	qO(15) <= Secnd;
-	u3: counterD4 PORT MAP(
-		clkI => Secnd,
-		clrKn => clrKn,
-		qO => qO(19 downto 16)
+	u3: count_03 PORT MAP(
+		clock => Secnd,
+		aclr => not clrKn,
+		q => qO(17 downto 16)
 	);
 END ph68;
