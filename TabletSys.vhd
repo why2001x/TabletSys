@@ -36,7 +36,7 @@ ENTITY TabletSys IS
 
 		TabletReady: OUT std_logic;	--药片请求，脉冲输出，至供给端--
 		botO: OUT std_logic;				--换瓶操作，电平输出，至伺服电机--
-		tabI: IN std_logic;				--药片脉冲，自传感器--
+		tabI: BUFFER std_logic;				--药片脉冲，自传感器--
 		BottleReady: IN std_logic;		--药瓶就位电平，自传感器--
 
 		clkI: IN std_logic;	--时钟脉冲--	--时钟脉冲使用CP3(1Hz)--
@@ -47,7 +47,7 @@ ENTITY TabletSys IS
 END TabletSys;
 
 architecture Sys of TabletSys is
-
+	--signal tabI: std_logic;				--药片脉冲,由CP3分频得到--
 	signal status: std_logic_vector(2 downto 0);	--指示输入状态--
 	signal num: std_logic_vector(3 downto 0);		--暂存输入数--
 
@@ -89,6 +89,22 @@ architecture Sys of TabletSys is
 	signal Equalnw: std_logic_vector(3 downto 0);	--Equal#	4位信号--
 begin
 
+--分频控制,对1Hz信号2分频至2Hz模拟药片--
+	Process(clkI)
+		variable temp:std_logic :='0';
+	begin
+		if(rising_edge(clkI)) then
+			if(temp='0') then
+				temp:='1';
+				tabI<='1';
+			else 
+				temp:='0';
+				tabI<='0';
+			end if;
+		end if;
+	end process;
+------------------------------------
+		
 --状态控制--
 ------------------------------------------------------------
 ------------------------------------------------------------
@@ -296,9 +312,25 @@ begin
 
 --LED--
 ----------------------------------------
-	rLED <= haltK or (Error and clkI);		--受干涉/错误(闪烁)状态--
-	gLED <= Start; --and Finishn; --> BUG(绝了)	--工作状态--
-----------------------------------------
+   Process(haltK,Error,clkI)
+	begin
+		if(Error='1' and clkI='1') then --受干涉/错误(闪烁)状态--
+			rLED<='1';
+			gLED<='0';
+		elsif(haltK='1') then
+			rLED<='1';
+			gLED<='1';
+		elsif(Start='1' and Finishn='1') then --工作状态--
+			rLED<='0';
+			gLED<='1';
+		else 
+			rLED<='0';
+			gLED<='0';
+		end if;
+	end process;
+	--rLED <= haltK or (Error and clkI);		--受干涉/错误(闪烁)状态--
+	--gLED <= Start and Finishn; --> BUG(绝了)	--工作状态--
+---------------------------------------	-
 
 --数码管--
 ----------------------------------------
