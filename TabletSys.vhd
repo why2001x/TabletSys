@@ -20,7 +20,7 @@ USE work.Utilities.all;
 
 ENTITY TabletSys IS
 	PORT (
-		REDUNDANCE: OUT std_logic_vector(4 downto 0); --冗余引脚使器件易于匹配CPLD适当调整可以在Fitter(Place & Route)阶段减单元数--
+		REDUNDANCE: OUT std_logic_vector(3 downto 0); --冗余引脚使器件易于匹配CPLD适当调整可以在Fitter(Place & Route)阶段减单元数--
 
 		modeP: IN std_logic;							--模式切换按钮--
 		setP: IN std_logic;							--设定按钮--
@@ -95,7 +95,7 @@ begin
 	Process(clkI)
 	begin
 		if(rising_edge(clkI)) then
-			tabI <= not tabI;
+			tabI <= Finishn and not tabI;
 		end if;
 	end process;
 ------------------------------------
@@ -239,7 +239,7 @@ begin
 
 --当前片数--
 ----------------------------------------
-	ValidPill <= tabI and BottleReady and not nextK;												--有效药片落下时，应当药瓶就绪，且不在被强制移动--	--条件尽可能由外侧保障--
+	ValidPill <= tabI and BottleReady and not nextK;		--有效药片落下时，应当药瓶就绪，且不在被强制移动--	--条件尽可能由外侧保障--
 	PillsInBottle(2)(3 downto 2) <= (GND, GND);				--瓶内片数百位高2位恒0--
 	PillsInBottleCounter: counterDA PORT MAP(					--瓶内片数计数--
 		clkI => ValidPill,											--有效药片计数--
@@ -275,35 +275,26 @@ begin
 	);
 	--代码左侧信号相等时,经由同类型逻辑电路变换,其状态不影响右侧信号关系,又下一次左侧信号变化远落后于延迟,故借助信号延迟可完成元件复用-- --注：该器件无法进行功能仿真--
 	Judge: comparatorA PORT MAP(            --瓶内未满时判断瓶内片数关系-- or --瓶内满时判断已装瓶数关系--
-		dataa(9 downto 8) => (PillsInBottle(2)(1 downto 0) and (Equaln, Equaln)) or (BottlesCount(2)(1 downto 0) and (Equal, Equal)),
+		dataa(11 downto 8)=> (PillsInBottle(2)  and Equalnw) or (BottlesCount(2) and Equalw),
 		dataa(7 downto 4) => (PillsInBottle(1)  and Equalnw) or (BottlesCount(1) and Equalw),
 		dataa(3 downto 0) => (PillsInBottle(0)  and Equalnw) or (BottlesCount(0) and Equalw),
-		datab(9 downto 8) => (PillsPerBottle(2)(1 downto 0) and (Equaln, Equaln))  or (BottlesLimit(2)(1 downto 0) and (Equal, Equal)),
+		datab(11 downto 8)=> (PillsPerBottle(2) and Equalnw) or (BottlesLimit(2) and Equalw),
 		datab(7 downto 4) => (PillsPerBottle(1) and Equalnw) or (BottlesLimit(1) and Equalw),
 		datab(3 downto 0) => (PillsPerBottle(0) and Equalnw) or (BottlesLimit(0) and Equalw),
 		aeb => Equal,
 		aneb=> Equaln,
 		agb => Error
 	);
-	PreFin: dffe PORT MAP(
-		PRN => VCC,
-		CLRN => Startn,
-		ENA => Equal,
-		CLK => clkI,
-		D => VCC,
-		Q => Finishw
-	);
-	Fin: dffe PORT MAP(
-		PRN => VCC,
-		CLRN => Startn,
-		ENA => Finishw,
-		CLK => clkI,
-		D => VCC,
-		Q => Finish
-	);
-	REDUNDANCE(1) <= Finishw;
-	REDUNDANCE(0) <= Equal;
---	Finish <= Equal;						--结束Flag--
+	Process (Equal, clkI)	--结束Flag--
+	begin
+		if (Equal = GND) then
+			Finishw <= GND;
+			Finish <= GND;
+		elsif (rising_edge(clkI)) then
+			Finishw <= Start;
+			Finish <= Finishw;
+		end if;
+	end process;
 	Finishn <= Start and not Finish;	--未结束Flag--
 ------------------------------------------------------------
 ------------------------------------------------------------
@@ -315,8 +306,8 @@ begin
 		D => not BottleReady,		--高电平直至有药瓶就绪--
 		Q => BottleRequest			--药瓶请求--
 	);	
-	TabletReady <= (Start and Finishn) and TabletRequest and not(haltK or nextK);	--工作状态&药片请求&无强制干涉->可接受药片--				
-	botO <= (Equal and Start) or (BottleRequest or nextK);	--(满瓶&工作状态)|(药瓶请求|强制干涉)->要求药瓶就绪--
+	TabletReady <= Finishn and TabletRequest and not(haltK or nextK);	--工作状态&药片请求&无强制干涉->可接受药片--				
+	botO <= (Equal and Finishn) or (BottleRequest or nextK);	--(满瓶&工作状态)|(药瓶请求|强制干涉)->要求药瓶就绪--
 
 ------------------------------------------------------------
 ------------------------------------------------------------

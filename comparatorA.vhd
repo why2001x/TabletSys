@@ -42,8 +42,8 @@ USE lpm.all;
 ENTITY comparatorA IS
 	PORT
 	(
-		dataa		: IN STD_LOGIC_VECTOR (9 DOWNTO 0);
-		datab		: IN STD_LOGIC_VECTOR (9 DOWNTO 0);
+		dataa		: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
+		datab		: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
 		aeb		: OUT STD_LOGIC ;
 		agb		: OUT STD_LOGIC ;
 		aneb		: OUT STD_LOGIC 
@@ -69,8 +69,8 @@ ARCHITECTURE SYN OF comparatora IS
 			aeb	: OUT STD_LOGIC ;
 			agb	: OUT STD_LOGIC ;
 			aneb	: OUT STD_LOGIC ;
-			datab	: IN STD_LOGIC_VECTOR (9 DOWNTO 0);
-			dataa	: IN STD_LOGIC_VECTOR (9 DOWNTO 0)
+			datab	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
+			dataa	: IN STD_LOGIC_VECTOR (11 DOWNTO 0)
 	);
 	END COMPONENT;
 
@@ -83,7 +83,7 @@ BEGIN
 	GENERIC MAP (
 		lpm_representation => "UNSIGNED",
 		lpm_type => "LPM_COMPARE",
-		lpm_width => 10
+		lpm_width => 12
 	)
 	PORT MAP (
 		datab => datab,
@@ -116,19 +116,19 @@ END SYN;
 -- Retrieval info: PRIVATE: aclr NUMERIC "0"
 -- Retrieval info: PRIVATE: clken NUMERIC "0"
 -- Retrieval info: PRIVATE: isPortBConstant NUMERIC "0"
--- Retrieval info: PRIVATE: nBit NUMERIC "10"
+-- Retrieval info: PRIVATE: nBit NUMERIC "12"
 -- Retrieval info: PRIVATE: new_diagram STRING "1"
 -- Retrieval info: LIBRARY: lpm lpm.lpm_components.all
 -- Retrieval info: CONSTANT: LPM_REPRESENTATION STRING "UNSIGNED"
 -- Retrieval info: CONSTANT: LPM_TYPE STRING "LPM_COMPARE"
--- Retrieval info: CONSTANT: LPM_WIDTH NUMERIC "10"
+-- Retrieval info: CONSTANT: LPM_WIDTH NUMERIC "12"
 -- Retrieval info: USED_PORT: aeb 0 0 0 0 OUTPUT NODEFVAL "aeb"
 -- Retrieval info: USED_PORT: agb 0 0 0 0 OUTPUT NODEFVAL "agb"
 -- Retrieval info: USED_PORT: aneb 0 0 0 0 OUTPUT NODEFVAL "aneb"
--- Retrieval info: USED_PORT: dataa 0 0 10 0 INPUT NODEFVAL "dataa[9..0]"
--- Retrieval info: USED_PORT: datab 0 0 10 0 INPUT NODEFVAL "datab[9..0]"
--- Retrieval info: CONNECT: @dataa 0 0 10 0 dataa 0 0 10 0
--- Retrieval info: CONNECT: @datab 0 0 10 0 datab 0 0 10 0
+-- Retrieval info: USED_PORT: dataa 0 0 12 0 INPUT NODEFVAL "dataa[11..0]"
+-- Retrieval info: USED_PORT: datab 0 0 12 0 INPUT NODEFVAL "datab[11..0]"
+-- Retrieval info: CONNECT: @dataa 0 0 12 0 dataa 0 0 12 0
+-- Retrieval info: CONNECT: @datab 0 0 12 0 datab 0 0 12 0
 -- Retrieval info: CONNECT: aeb 0 0 0 0 @aeb 0 0 0 0
 -- Retrieval info: CONNECT: agb 0 0 0 0 @agb 0 0 0 0
 -- Retrieval info: CONNECT: aneb 0 0 0 0 @aneb 0 0 0 0

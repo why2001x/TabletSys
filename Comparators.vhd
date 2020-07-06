@@ -5,7 +5,7 @@ PACKAGE Comparators IS
 
 COMPONENT comparatorA IS
 	PORT (
-		dataa, datab: IN std_logic_vector(9 downto 0);
+		dataa, datab: IN std_logic_vector(11 downto 0);
 		aeb, aneb, agb: OUT std_logic
 	);
 END COMPONENT;
