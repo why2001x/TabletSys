@@ -20,8 +20,6 @@ USE work.Utilities.all;
 
 ENTITY TabletSys IS
 	PORT (
-		REDUNDANCE: OUT std_logic_vector(4 downto 0); --冗余引脚使器件易于匹配CPLD适当调整可以在Fitter(Place & Route)阶段减单元数--
-
 		modeP: IN std_logic;							--模式切换按钮--
 		setP: IN std_logic;							--设定按钮--
 		disK: IN std_logic_vector(1 downto 0);	--显示切换开关2个--
@@ -42,7 +40,9 @@ ENTITY TabletSys IS
 		BottleReady: IN std_logic;		--药瓶就位电平，自传感器--
 
 		clkI: IN std_logic;	--时钟脉冲--	--时钟脉冲使用CP3(1Hz)--
-		clkHI: IN std_logic --中频时钟输入(CP2)--	--时钟脉冲使用CP2(100Hz)--
+		clkHI: IN std_logic; --中频时钟输入(CP2)--	--时钟脉冲使用CP2(100Hz)--
+
+		REDUNDANCE: OUT std_logic_vector(4 downto 0) --冗余引脚使器件易于匹配CPLD适当调整可以在Fitter(Place & Route)阶段减单元数--
 	);
 END TabletSys;
 
@@ -65,8 +65,7 @@ architecture Sys of TabletSys is
 	signal Startn: std_logic;	--开始Flag#--
 	signal Start: std_logic;	--开始Flag--
 	signal Finish: std_logic;	--完成Flag--
-	signal Finishw: std_logic;	--弱完成Flag--
-	signal Finishn: std_logic;	--未完成Flag--
+	signal Finishn: std_logic;	--完成Flag#--
 
 	signal TabletRequest: std_logic;	--接收就绪时向供给端请求药片--
 	signal BottleRequest: std_logic;	--接收未就绪向接收端请求更新--
@@ -86,16 +85,22 @@ architecture Sys of TabletSys is
 
 	signal Error: std_logic;	--显著错误信号--
 	signal Equal: std_logic;	--比较相等信号--
-	signal Equaln: std_logic;
 	signal Equalw: std_logic_vector(3 downto 0);	--Equal	4位信号--
 	signal Equalnw: std_logic_vector(3 downto 0);	--Equal#	4位信号--
 begin
 
 --分频控制,对1Hz信号2分频至2Hz模拟药片--
 	Process(clkI)
+		variable temp:std_logic :='0';
 	begin
 		if(rising_edge(clkI)) then
-			tabI <= not tabI;
+			if(temp='0') then
+				temp:='1';
+				tabI<='1';
+			else 
+				temp:='0';
+				tabI<='0';
+			end if;
 		end if;
 	end process;
 ------------------------------------
@@ -143,7 +148,7 @@ begin
 		y1n => Code(1),	--01-瓶数百位	0/1--
 		y2n => Code(2),	--01-瓶数十位	0-9--
 		y3n => Code(3),	--01-瓶数个位	0-9--
-		y4n => Code(4),	--01-瓶数百位	0-3--
+		y4n => Code(4),	--01-瓶数百位	0-7--
 		y5n => Code(5),	--01-瓶数百位	0-9--
 		y6n => Code(6),	--01-瓶数百位	0-9--
 		y7n => OPEN			--无07状态--
@@ -159,9 +164,9 @@ begin
 		aclr => (num(1) and not Code(1))					--瓶数限制(<=100)--
 				or(BottlesLimit(2)(0) and not Code(2))	--瓶数首位连带限制--
 				or(BottlesLimit(2)(0) and not Code(3))	--瓶数首位连带限制--
-				or(num(2) and not Code(4))					--片数百位限制0-3--
-				or(num(1) and not Code(6))					--片数个位限制0/5--
+				or(num(3) and not Code(4))					--片数百位限制0-7--
 				or modeP,										--位间切换复位--
+				--or Finishn,
 		q => num													--8421码输出--
 	);
 ----------------------------------------
@@ -194,13 +199,13 @@ begin
 
 --片数限制--
 ----------------------------------------
-	PillsPerBottle(2)(3 downto 2) <= (GND, GND);	--目标片数百位高2位恒0--
-	PillsPerBottle2: register2 PORT MAP(	--目标片数百位存储--
-		dI => num(1 downto 0),					--输入数据--
+	PillsPerBottle(2)(3) <= GND;				--目标片数百位高1位恒0--
+	PillsPerBottle2: register3 PORT MAP(	--目标片数百位存储--
+		dI => num(2 downto 0),					--输入数据--
 		clkI => Code(4) or not setP,			--选中时setP#下降沿更新--
 		clrKn => clrPn,							--全局复位--
 		EN => Startn,								--输入阶段使能--
-		qO => PillsPerBottle(2)(1 downto 0)	--目标片数百位输出--
+		qO => PillsPerBottle(2)(2 downto 0)	--目标片数百位输出--
 	);
 	PillsPerBottle1: register4 PORT MAP(	--目标片数十位存储--
 		dI => num,									--输入数据--
@@ -210,7 +215,7 @@ begin
 		qO => PillsPerBottle(1)					--目标片数十位输出--
 	);
 	PillsPerBottle0: register4 PORT MAP(	--目标片数个位存储--
-		dI => (GND, num(0), GND, num(0)),	--输入数据--
+		dI => num,									--输入数据--
 		clkI => Code(6) or not setP,			--选中时setP#下降沿更新--
 		clrKn => clrPn,							--全局复位--
 		EN => Startn,								--输入阶段使能--
@@ -239,19 +244,19 @@ begin
 
 --当前片数--
 ----------------------------------------
-	ValidPill <= tabI and BottleReady and not nextK;												--有效药片落下时，应当药瓶就绪，且不在被强制移动--	--条件尽可能由外侧保障--
-	PillsInBottle(2)(3 downto 2) <= (GND, GND);				--瓶内片数百位高2位恒0--
-	PillsInBottleCounter: counterDA PORT MAP(					--瓶内片数计数--
+	ValidPill <= tabI and BottleReady and not nextK;		--有效药片落下时，应当药瓶就绪，且不在被强制移动--
+	PillsInBottle(2)(3) <= GND;									--瓶内片数百位高1位恒0--
+	PillsInBottleCounter: counterDB PORT MAP(					--瓶内片数计数--
 		clkI => ValidPill,											--有效药片计数--
 		clrKn => Start and not(Equal or nextK),				--输入阶段/满瓶/强制换瓶计数复位--
-		qO(9 downto 8) => PillsInBottle(2)(1 downto 0),		--瓶内片数百位输出--
+		qO(10 downto 8) => PillsInBottle(2)(2 downto 0),	--瓶内片数百位输出--
 		qO(7 downto 4) => PillsInBottle(1),						--瓶内片数十位输出--
 		qO(3 downto 0) => PillsInBottle(0)						--瓶内片数个位输出--
 	);
-	PillsCounter: counterD12 PORT MAP(							--总药片数计数--
+	PillsCounter: counterD14 PORT MAP(							--总药片数计数--
 		clkI => ValidPill,											--有效药片计数--
 		clrKn => Start,												--输入阶段异步复位--
-		qO(17 downto 16) => PillsCount(4)(1 downto 0),		--总药片数万位输出--
+		qO(19 downto 16) => PillsCount(4),						--总药片数万位输出--
 		qO(15 downto 12) => PillsCount(3),						--总药片数千位输出--
 		qO(11 downto 8) => PillsCount(2),						--总药片数百位输出--
 		qO(7 downto 4) => PillsCount(1),							--总药片数十位输出--
@@ -265,52 +270,32 @@ begin
 ------------------------------------------------------------
 ------------------------------------------------------------
 
-	aebw: copy4 PORT MAP(		--Equal 一分四--
+	aeb: copy4 PORT MAP(		--Equal 一分四--
 		I => Equal,
 		O => Equalw
 	);
-	aebnw: copy4 PORT MAP(	--Equal#一分四--
-		I => Equaln,
+	aebn: copy4 PORT MAP(	--Equal#一分四--
+		I => not Equal,
 		O => Equalnw
 	);
-	--代码左侧信号相等时,经由同类型逻辑电路变换,其状态不影响右侧信号关系,又下一次左侧信号变化远落后于延迟,故借助信号延迟可完成元件复用-- --注：该器件无法进行功能仿真--
-	Judge: comparatorA PORT MAP(            --瓶内未满时判断瓶内片数关系-- or --瓶内满时判断已装瓶数关系--
-		dataa(9 downto 8) => (PillsInBottle(2)(1 downto 0) and (Equaln, Equaln)) or (BottlesCount(2)(1 downto 0) and (Equal, Equal)),
-		dataa(7 downto 4) => (PillsInBottle(1)  and Equalnw) or (BottlesCount(1) and Equalw),
-		dataa(3 downto 0) => (PillsInBottle(0)  and Equalnw) or (BottlesCount(0) and Equalw),
-		datab(9 downto 8) => (PillsPerBottle(2)(1 downto 0) and (Equaln, Equaln))  or (BottlesLimit(2)(1 downto 0) and (Equal, Equal)),
-		datab(7 downto 4) => (PillsPerBottle(1) and Equalnw) or (BottlesLimit(1) and Equalw),
-		datab(3 downto 0) => (PillsPerBottle(0) and Equalnw) or (BottlesLimit(0) and Equalw),
+	Judge: comparatorC PORT MAP(	--瓶内未满时判断瓶内片数关系-- or --瓶内满时判断已装瓶数关系--
+		dataa(11 downto 8) => (PillsInBottle(2)  and Equalnw) or (BottlesCount(2) and Equalw),	--代码左侧信号相等时--
+		dataa(7 downto 4)  => (PillsInBottle(1)  and Equalnw) or (BottlesCount(1) and Equalw),	--经由同类型逻辑电路变换--
+		dataa(3 downto 0)  => (PillsInBottle(0)  and Equalnw) or (BottlesCount(0) and Equalw),	--其状态不影响右侧信号关系--
+		datab(11 downto 8) => (PillsPerBottle(2) and Equalnw) or (BottlesLimit(2) and Equalw),	--又下一次左侧信号变化远落后于延迟--
+		datab(7 downto 4)  => (PillsPerBottle(1) and Equalnw) or (BottlesLimit(1) and Equalw),	--故借助信号延迟可完成元件复用--
+		datab(3 downto 0)  => (PillsPerBottle(0) and Equalnw) or (BottlesLimit(0) and Equalw),	--注：该器件无法进行功能仿真--
 		aeb => Equal,
-		aneb=> Equaln,
 		agb => Error
 	);
-	PreFin: dffe PORT MAP(
-		PRN => VCC,
-		CLRN => Startn,
-		ENA => Equal,
-		CLK => clkI,
-		D => VCC,
-		Q => Finishw
-	);
-	Fin: dffe PORT MAP(
-		PRN => VCC,
-		CLRN => Startn,
-		ENA => Finishw,
-		CLK => clkI,
-		D => VCC,
-		Q => Finish
-	);
-	REDUNDANCE(1) <= Finishw;
-	REDUNDANCE(0) <= Equal;
---	Finish <= Equal;						--结束Flag--
+	Finish <= Equal;						--结束Flag--
 	Finishn <= Start and not Finish;	--未结束Flag--
 ------------------------------------------------------------
 ------------------------------------------------------------
 	TabletRequest <= BottleReady;	--药瓶就绪->接受药片请求--
 	bottlePrepare: dff PORT MAP(	--向传送带电机输出电平，顺向转动直至下一个药瓶在就绪位置--
 		PRN => VCC,						--无预置--
-		CLRN => Finishn,					--无预置--
+		CLRN => VCC,					--无预置--
 		CLK => clkHI,					--中频时钟，峰峰时差相对药瓶移动应可忽略--
 		D => not BottleReady,		--高电平直至有药瓶就绪--
 		Q => BottleRequest			--药瓶请求--
@@ -345,7 +330,7 @@ begin
 	end process;
 	--rLED <= haltK or (Error and clkI);		--受干涉/错误(闪烁)状态--
 	--gLED <= Start and Finishn; --> BUG(绝了)	--工作状态--
-----------------------------------------
+---------------------------------------	-
 
 --数码管--
 ----------------------------------------
@@ -433,3 +418,6 @@ begin
 ------------------------------------------------------------	
 
 end architecture;
+
+
+		
