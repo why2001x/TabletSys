@@ -39,7 +39,7 @@ ENTITY TabletSys IS
 		TabletReady: OUT std_logic;	--药片请求，脉冲输出，至供给端--
 		botO: OUT std_logic;				--换瓶操作，电平输出，至伺服电机--
 		tabI: BUFFER std_logic;				--药片脉冲，自传感器--
-		BottleReady: IN std_logic;		--药瓶就位电平，自传感器--
+		BottleReady: BUFFER std_logic;		--药瓶就位电平，自传感器--
 
 		clkI: IN std_logic;	--时钟脉冲--	--时钟脉冲使用CP3(1Hz)--
 		clkHI: IN std_logic --中频时钟输入(CP2)--	--时钟脉冲使用CP2(100Hz)--
@@ -99,7 +99,15 @@ begin
 		end if;
 	end process;
 ------------------------------------
-		
+	Process (Equal, clkI)
+	begin
+		if (Equal = VCC) then
+			BottleReady <= GND;
+		elsif (rising_edge(clkI)) then
+			BottleReady <= VCC;
+		end if;
+	end process;
+------------------------------------
 --状态控制--
 ------------------------------------------------------------
 ------------------------------------------------------------
