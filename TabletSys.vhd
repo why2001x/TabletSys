@@ -306,7 +306,7 @@ begin
 	Finishn <= Start and not Finish;	--未结束Flag--
 ------------------------------------------------------------
 ------------------------------------------------------------
-	TabletRequest <= BottleReady;	--药瓶就绪->接受药片请求--
+	TabletRequest <= BottleReady and not Error;	--药瓶就绪->接受药片请求--
 	bottlePrepare: dff PORT MAP(	--向传送带电机输出电平，顺向转动直至下一个药瓶在就绪位置--
 		PRN => VCC,						--无预置--
 		CLRN => Finishn,					--无预置--
