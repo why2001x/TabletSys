@@ -95,7 +95,7 @@ begin
 	Process(clkI)
 	begin
 		if(rising_edge(clkI)) then
-			tabI <= Finishn and not tabI;
+			tabI <= Finishn and TabletRequest and not(haltK or nextK) and not tabI;
 		end if;
 	end process;
 ------------------------------------
@@ -239,7 +239,7 @@ begin
 
 --当前片数--
 ----------------------------------------
-	ValidPill <= tabI and BottleReady and not nextK;		--有效药片落下时，应当药瓶就绪，且不在被强制移动--	--条件尽可能由外侧保障--
+	ValidPill <= tabI and BottleReady and not nextK;	--有效药片落下时，应当药瓶就绪，且不在被强制干涉--	--条件尽可能由外侧保障--
 	PillsInBottle(2)(3 downto 2) <= (GND, GND);				--瓶内片数百位高2位恒0--
 	PillsInBottleCounter: counterDA PORT MAP(					--瓶内片数计数--
 		clkI => ValidPill,											--有效药片计数--
@@ -318,24 +318,8 @@ begin
 
 --LED--
 ----------------------------------------
-   Process(haltK,Error,clkI)
-	begin
-		if(Error='1' and clkI='1') then --受干涉/错误(闪烁)状态--
-			rLED<='1';
-			gLED<='0';
-		elsif(haltK='1') then
-			rLED<='1';
-			gLED<='1';
-		elsif(Start='1' and Finishn='1') then --工作状态--
-			rLED<='0';
-			gLED<='1';
-		else 
-			rLED<='0';
-			gLED<='0';
-		end if;
-	end process;
-	--rLED <= haltK or (Error and clkI);		--受干涉/错误(闪烁)状态--
-	--gLED <= Start and Finishn; --> BUG(绝了)	--工作状态--
+	rLED <= haltK or (Error and clkI);		--受干涉/错误(闪烁)状态--
+	gLED <= Finishn;								--工作状态--
 ----------------------------------------
 
 --数码管--
