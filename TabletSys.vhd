@@ -283,7 +283,6 @@ begin
 	);
 	--代码左侧信号相等时,经由同类型逻辑电路变换,其状态不影响右侧信号关系,又下一次左侧信号变化远落后于延迟,故借助信号延迟可完成元件复用-- --注：该器件无法进行功能仿真--
 	Judge: comparatorA PORT MAP(            --瓶内未满时判断瓶内片数关系-- or --瓶内满时判断已装瓶数关系--
-		clock => clkHI,
 		dataa(11 downto 8)=> (PillsInBottle(2)  and Equalnw) or (BottlesCount(2) and Equalw),
 		dataa(7 downto 4) => (PillsInBottle(1)  and Equalnw) or (BottlesCount(1) and Equalw),
 		dataa(3 downto 0) => (PillsInBottle(0)  and Equalnw) or (BottlesCount(0) and Equalw),
