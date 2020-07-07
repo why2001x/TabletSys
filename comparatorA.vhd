@@ -42,6 +42,7 @@ USE lpm.all;
 ENTITY comparatorA IS
 	PORT
 	(
+		clock		: IN STD_LOGIC ;
 		dataa		: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
 		datab		: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
 		aeb		: OUT STD_LOGIC ;
@@ -61,6 +62,7 @@ ARCHITECTURE SYN OF comparatora IS
 
 	COMPONENT lpm_compare
 	GENERIC (
+		lpm_pipeline		: NATURAL;
 		lpm_representation		: STRING;
 		lpm_type		: STRING;
 		lpm_width		: NATURAL
@@ -69,6 +71,7 @@ ARCHITECTURE SYN OF comparatora IS
 			aeb	: OUT STD_LOGIC ;
 			agb	: OUT STD_LOGIC ;
 			aneb	: OUT STD_LOGIC ;
+			clock	: IN STD_LOGIC ;
 			datab	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
 			dataa	: IN STD_LOGIC_VECTOR (11 DOWNTO 0)
 	);
@@ -81,11 +84,13 @@ BEGIN
 
 	LPM_COMPARE_component : LPM_COMPARE
 	GENERIC MAP (
+		lpm_pipeline => 1,
 		lpm_representation => "UNSIGNED",
 		lpm_type => "LPM_COMPARE",
 		lpm_width => 12
 	)
 	PORT MAP (
+		clock => clock,
 		datab => datab,
 		dataa => dataa,
 		aeb => sub_wire0,
@@ -108,7 +113,7 @@ END SYN;
 -- Retrieval info: PRIVATE: AneB NUMERIC "1"
 -- Retrieval info: PRIVATE: INTENDED_DEVICE_FAMILY STRING "MAX7000S"
 -- Retrieval info: PRIVATE: LPM_PIPELINE NUMERIC "1"
--- Retrieval info: PRIVATE: Latency NUMERIC "0"
+-- Retrieval info: PRIVATE: Latency NUMERIC "1"
 -- Retrieval info: PRIVATE: PortBValue NUMERIC "0"
 -- Retrieval info: PRIVATE: Radix NUMERIC "10"
 -- Retrieval info: PRIVATE: SYNTH_WRAPPER_GEN_POSTFIX STRING "0"
@@ -119,14 +124,17 @@ END SYN;
 -- Retrieval info: PRIVATE: nBit NUMERIC "12"
 -- Retrieval info: PRIVATE: new_diagram STRING "1"
 -- Retrieval info: LIBRARY: lpm lpm.lpm_components.all
+-- Retrieval info: CONSTANT: LPM_PIPELINE NUMERIC "1"
 -- Retrieval info: CONSTANT: LPM_REPRESENTATION STRING "UNSIGNED"
 -- Retrieval info: CONSTANT: LPM_TYPE STRING "LPM_COMPARE"
 -- Retrieval info: CONSTANT: LPM_WIDTH NUMERIC "12"
 -- Retrieval info: USED_PORT: aeb 0 0 0 0 OUTPUT NODEFVAL "aeb"
 -- Retrieval info: USED_PORT: agb 0 0 0 0 OUTPUT NODEFVAL "agb"
 -- Retrieval info: USED_PORT: aneb 0 0 0 0 OUTPUT NODEFVAL "aneb"
+-- Retrieval info: USED_PORT: clock 0 0 0 0 INPUT NODEFVAL "clock"
 -- Retrieval info: USED_PORT: dataa 0 0 12 0 INPUT NODEFVAL "dataa[11..0]"
 -- Retrieval info: USED_PORT: datab 0 0 12 0 INPUT NODEFVAL "datab[11..0]"
+-- Retrieval info: CONNECT: @clock 0 0 0 0 clock 0 0 0 0
 -- Retrieval info: CONNECT: @dataa 0 0 12 0 dataa 0 0 12 0
 -- Retrieval info: CONNECT: @datab 0 0 12 0 datab 0 0 12 0
 -- Retrieval info: CONNECT: aeb 0 0 0 0 @aeb 0 0 0 0
