@@ -260,10 +260,10 @@ begin
 		qO(7 downto 4) => PillsInBottle(1),						--瓶内片数十位输出--
 		qO(3 downto 0) => PillsInBottle(0)						--瓶内片数个位输出--
 	);
-	PillsCounter: counterD12 PORT MAP(							--总药片数计数--
+	PillsCounter: counterD13 PORT MAP(							--总药片数计数--
 		clkI => ValidPill,											--有效药片计数--
 		clrKn => Start,												--输入阶段异步复位--
-		qO(17 downto 16) => PillsCount(4)(1 downto 0),		--总药片数万位输出--
+		qO(18 downto 16) => PillsCount(4)(2 downto 0),		--总药片数万位输出--
 		qO(15 downto 12) => PillsCount(3),						--总药片数千位输出--
 		qO(11 downto 8) => PillsCount(2),						--总药片数百位输出--
 		qO(7 downto 4) => PillsCount(1),							--总药片数十位输出--
