@@ -56,6 +56,7 @@ architecture Sys of TabletSys is
 
 	signal BottlesCount: BCDs(2 downto 0);	--目前已装瓶数--
 	signal BottlesLimit: BCDs(2 downto 0);	--最大可装瓶数--
+	signal BottleLimit: std_logic;
 
 	signal Code: std_logic_vector(6 downto 1);	--输入状态解码--
 	signal StartPulsen: std_logic;					--开始脉冲#--
@@ -162,13 +163,14 @@ begin
 
 --输入计数器--
 ----------------------------------------
+	BottleLimit <= BottlesLimit(2)(1);
 	numCounter: count_09 PORT MAP(						--输入计数器 0-9循环--
 		clock => setP,											--setP上升沿计数加--
 		clk_en => VCC,											--全时使能--
 		cout => OPEN,											--进位暂不使用--
-		aclr => (num(1) and not Code(1))					--瓶数限制(<=100)--
-				or(BottlesLimit(2)(0) and not Code(2))	--瓶数首位连带限制--
-				or(BottlesLimit(2)(0) and not Code(3))	--瓶数首位连带限制--
+		aclr => (num(1) and num(0) and not Code(1))					--瓶数限制(<=100)--
+				or(BottleLimit and not Code(2))	--瓶数首位连带限制--
+				or(BottleLimit and not Code(3))	--瓶数首位连带限制--
 				or(num(2) and not Code(4))					--片数百位限制0-3--
 				or(num(1) and not Code(6))					--片数个位限制0/5--
 				or modeP,										--位间切换复位--
@@ -178,13 +180,13 @@ begin
 
 --瓶数限制--
 ----------------------------------------
-	BottlesLimit(2)(3 downto 1) <= (GND, GND, GND);	--目标瓶数百位高3位恒0--
-	bottleLimit2: register1 PORT MAP(					--目标瓶数百位存储--
-		dI => num(0 downto 0),								--输入数据--
+	BottlesLimit(2)(3 downto 2) <= (GND, GND);	--目标瓶数百位高3位恒0--
+	bottleLimit2: register2 PORT MAP(					--目标瓶数百位存储--
+		dI => num(1 downto 0),								--输入数据--
 		clkI => Code(1) or not setP,						--选中时setP#下降沿更新--
 		clrKn => clrPn,										--全局复位--
 		EN => Startn,											--输入阶段使能--
-		qO => BottlesLimit(2)(0 downto 0)				--目标瓶数百位输出--
+		qO => BottlesLimit(2)(1 downto 0)				--目标瓶数百位输出--
 	);
 	bottleLimit1: register4 PORT MAP(					--目标瓶数十位存储--
 		dI => num,												--输入数据--
@@ -237,11 +239,11 @@ begin
 
 --已有瓶数--
 ----------------------------------------
-	BottlesCount(2)(3 downto 1) <= (GND, GND, GND);					--将完成瓶数百位高3位恒0--
-	BottleCounter: counterD9 PORT MAP(									--将完成瓶数计数--
+	BottlesCount(2)(3 downto 2) <= (GND, GND);					--将完成瓶数百位高3位恒0--
+	BottleCounter: counterDA PORT MAP(									--将完成瓶数计数--
 		clkI => Equal or nextK or Startn,								--满瓶/强制换瓶计数--	--开始Flag#用于赋初值--
 		clrKn => Start,														--输入阶段异步复位--
-		qO(8 downto 8) => BottlesCount(2)(0 downto 0),				--将完成瓶数百位输出--
+		qO(9 downto 8) => BottlesCount(2)(1 downto 0),				--将完成瓶数百位输出--
 		qO(7 downto 4) => BottlesCount(1),								--将完成瓶数十位输出--
 		qO(3 downto 0) => BottlesCount(0)								--将完成瓶数个位输出--
 	);
@@ -284,7 +286,7 @@ begin
 		O => Equalnw
 	);
 	Judge: comparatorC PORT MAP(            --瓶内未满时判断瓶内片数关系-- or --瓶内满时判断已装瓶数关系--
-		clock => clkHI,
+		clock => not clkHI,
 		dataa(11 downto 8)=> (PillsInBottle(2)  and Equalnw) or (BottlesCount(2) and Equalw),
 		dataa(7 downto 4) => (PillsInBottle(1)  and Equalnw) or (BottlesCount(1) and Equalw),
 		dataa(3 downto 0) => (PillsInBottle(0)  and Equalnw) or (BottlesCount(0) and Equalw),
