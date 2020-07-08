@@ -28,7 +28,7 @@ BEGIN
 	);
 	qO(15) <= Secnd;
 	u3: count_03 PORT MAP(
-		clock => Secnd,
+		clock => not Secnd,
 		aclr => not clrKn,
 		q => qO(17 downto 16)
 	);

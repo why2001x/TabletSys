@@ -42,16 +42,6 @@ SIGNAL("botO")
 	PARENT = "";
 }
 
-SIGNAL("BottleReady")
-{
-	VALUE_TYPE = NINE_LEVEL_BIT;
-	SIGNAL_TYPE = SINGLE_BIT;
-	WIDTH = 1;
-	LSB_INDEX = -1;
-	DIRECTION = INPUT;
-	PARENT = "";
-}
-
 SIGNAL("clkHI")
 {
 	VALUE_TYPE = NINE_LEVEL_BIT;
@@ -432,21 +422,22 @@ SIGNAL("tabI")
 	PARENT = "";
 }
 
+SIGNAL("BottleReady")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
 TRANSITION_LIST("botO")
 {
 	NODE
 	{
 		REPEAT = 1;
 		LEVEL X FOR 100000.0;
-	}
-}
-
-TRANSITION_LIST("BottleReady")
-{
-	NODE
-	{
-		REPEAT = 1;
-		LEVEL 1 FOR 100000.0;
 	}
 }
 
@@ -810,6 +801,15 @@ TRANSITION_LIST("TabletReady")
 }
 
 TRANSITION_LIST("tabI")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 100000.0;
+	}
+}
+
+TRANSITION_LIST("BottleReady")
 {
 	NODE
 	{

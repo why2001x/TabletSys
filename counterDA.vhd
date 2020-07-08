@@ -20,7 +20,7 @@ BEGIN
 	);
 	qO(7) <= temp;
 	u2: count_03 PORT MAP(
-		clock => temp,
+		clock => not temp,
 		aclr => not clrKn,
 		q => qO(9 downto 8)
 	);

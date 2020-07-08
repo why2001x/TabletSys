@@ -20,7 +20,7 @@ USE work.Utilities.all;
 
 ENTITY TabletSys IS
 	PORT (
-		REDUNDANCE: OUT std_logic_vector(3 downto 0); --冗余引脚使器件易于匹配CPLD适当调整可以在Fitter(Place & Route)阶段减单元数--
+--		REDUNDANCE: OUT std_logic_vector(3 downto 0); --冗余引脚使器件易于匹配CPLD适当调整可以在Fitter(Place & Route)阶段减单元数--
 
 		modeP: IN std_logic;							--模式切换按钮--
 		setP: IN std_logic;							--设定按钮--
@@ -39,7 +39,7 @@ ENTITY TabletSys IS
 		TabletReady: OUT std_logic;	--药片请求，脉冲输出，至供给端--
 		botO: OUT std_logic;				--换瓶操作，电平输出，至伺服电机--
 		tabI: BUFFER std_logic;				--药片脉冲，自传感器--
-		BottleReady: IN std_logic;		--药瓶就位电平，自传感器--
+		BottleReady: BUFFER std_logic;		--药瓶就位电平，自传感器--
 
 		clkI: IN std_logic;	--时钟脉冲--	--时钟脉冲使用CP3(1Hz)--
 		clkHI: IN std_logic --中频时钟输入(CP2)--	--时钟脉冲使用CP2(100Hz)--
@@ -47,7 +47,6 @@ ENTITY TabletSys IS
 END TabletSys;
 
 architecture Sys of TabletSys is
-	--signal tabI: std_logic;				--药片脉冲,由CP3分频得到--
 	signal status: std_logic_vector(2 downto 0);	--指示输入状态--
 	signal num: std_logic_vector(3 downto 0);		--暂存输入数--
 
@@ -92,10 +91,21 @@ architecture Sys of TabletSys is
 begin
 
 --分频控制,对1Hz信号2分频至2Hz模拟药片--
-	Process(clkI)
+	Process(clkI, Finishn, TabletRequest, haltK, nextK)
 	begin
-		if(rising_edge(clkI)) then
-			tabI <= Finishn and not tabI;
+		if ((Finishn and TabletRequest and not(haltK or nextK)) = GND) then
+			tabI <= GND;
+		elsif (rising_edge(clkI)) then
+			tabI <= not tabI;
+		end if;
+	end process;
+------------------------------------
+	Process (Equal, clkI)
+	begin
+		if (Equal = VCC) then
+			BottleReady <= GND;
+		elsif (rising_edge(clkI)) then
+			BottleReady <= VCC;
 		end if;
 	end process;
 ------------------------------------
@@ -239,7 +249,7 @@ begin
 
 --当前片数--
 ----------------------------------------
-	ValidPill <= tabI and BottleReady and not nextK;		--有效药片落下时，应当药瓶就绪，且不在被强制移动--	--条件尽可能由外侧保障--
+	ValidPill <= not(tabI or Error);		--有效药片落下时，应当药瓶就绪，且不在被强制移动--	--条件由外侧保障--
 	PillsInBottle(2)(3 downto 2) <= (GND, GND);				--瓶内片数百位高2位恒0--
 	PillsInBottleCounter: counterDA PORT MAP(					--瓶内片数计数--
 		clkI => ValidPill,											--有效药片计数--
@@ -273,8 +283,8 @@ begin
 		I => Equaln,
 		O => Equalnw
 	);
-	--代码左侧信号相等时,经由同类型逻辑电路变换,其状态不影响右侧信号关系,又下一次左侧信号变化远落后于延迟,故借助信号延迟可完成元件复用-- --注：该器件无法进行功能仿真--
-	Judge: comparatorA PORT MAP(            --瓶内未满时判断瓶内片数关系-- or --瓶内满时判断已装瓶数关系--
+	Judge: comparatorC PORT MAP(            --瓶内未满时判断瓶内片数关系-- or --瓶内满时判断已装瓶数关系--
+		clock => clkHI,
 		dataa(11 downto 8)=> (PillsInBottle(2)  and Equalnw) or (BottlesCount(2) and Equalw),
 		dataa(7 downto 4) => (PillsInBottle(1)  and Equalnw) or (BottlesCount(1) and Equalw),
 		dataa(3 downto 0) => (PillsInBottle(0)  and Equalnw) or (BottlesCount(0) and Equalw),
@@ -334,8 +344,6 @@ begin
 			gLED<='0';
 		end if;
 	end process;
-	--rLED <= haltK or (Error and clkI);		--受干涉/错误(闪烁)状态--
-	--gLED <= Start and Finishn; --> BUG(绝了)	--工作状态--
 ----------------------------------------
 
 --数码管--
