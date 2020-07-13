@@ -4,7 +4,7 @@
 -- MODULE: LPM_COUNTER 
 
 -- ============================================================
--- File Name: counterD3.vhd
+-- File Name: count_07.vhd
 -- Megafunction Name(s):
 -- 			LPM_COUNTER
 --
@@ -39,17 +39,17 @@ USE ieee.std_logic_1164.all;
 LIBRARY lpm;
 USE lpm.all;
 
-ENTITY counterD3 IS
+ENTITY count_07 IS
 	PORT
 	(
 		aclr		: IN STD_LOGIC ;
 		clock		: IN STD_LOGIC ;
 		q		: OUT STD_LOGIC_VECTOR (2 DOWNTO 0)
 	);
-END counterD3;
+END count_07;
 
 
-ARCHITECTURE SYN OF counterd3 IS
+ARCHITECTURE SYN OF count_07 IS
 
 	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (2 DOWNTO 0);
 
@@ -122,9 +122,9 @@ END SYN;
 -- Retrieval info: CONNECT: @aclr 0 0 0 0 aclr 0 0 0 0
 -- Retrieval info: CONNECT: @clock 0 0 0 0 clock 0 0 0 0
 -- Retrieval info: CONNECT: q 0 0 3 0 @q 0 0 3 0
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD3.vhd TRUE
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD3.inc FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD3.cmp FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD3.bsf FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD3_inst.vhd FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_07.vhd TRUE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_07.inc FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_07.cmp FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_07.bsf FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_07_inst.vhd FALSE
 -- Retrieval info: LIB_FILE: lpm

@@ -4,7 +4,7 @@
 -- MODULE: LPM_COUNTER 
 
 -- ============================================================
--- File Name: counterD1.vhd
+-- File Name: count_01.vhd
 -- Megafunction Name(s):
 -- 			LPM_COUNTER
 --
@@ -39,17 +39,17 @@ USE ieee.std_logic_1164.all;
 LIBRARY lpm;
 USE lpm.all;
 
-ENTITY counterD1 IS
+ENTITY count_01 IS
 	PORT
 	(
-		clkI	: IN STD_LOGIC ;
-		clrKn	: IN STD_LOGIC ;
-		qO		: OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
+		aclr		: IN STD_LOGIC ;
+		clock		: IN STD_LOGIC ;
+		q		: OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
 	);
-END counterD1;
+END count_01;
 
 
-ARCHITECTURE SYN OF counterd1 IS
+ARCHITECTURE SYN OF count_01 IS
 
 	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (0 DOWNTO 0);
 
@@ -63,14 +63,14 @@ ARCHITECTURE SYN OF counterd1 IS
 		lpm_width		: NATURAL
 	);
 	PORT (
-			clkI	: IN STD_LOGIC ;
-			clrKn	: IN STD_LOGIC ;
-			qO		: OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
+			aclr	: IN STD_LOGIC ;
+			clock	: IN STD_LOGIC ;
+			q	: OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
 	);
 	END COMPONENT;
 
 BEGIN
-	qO   <= sub_wire0(0 DOWNTO 0);
+	q    <= sub_wire0(0 DOWNTO 0);
 
 	LPM_COUNTER_component : LPM_COUNTER
 	GENERIC MAP (
@@ -80,8 +80,8 @@ BEGIN
 		lpm_width => 1
 	)
 	PORT MAP (
-		aclr => not clrKn,
-		clock => clkI,
+		aclr => aclr,
+		clock => clock,
 		q => sub_wire0
 	);
 
@@ -122,9 +122,9 @@ END SYN;
 -- Retrieval info: CONNECT: @aclr 0 0 0 0 aclr 0 0 0 0
 -- Retrieval info: CONNECT: @clock 0 0 0 0 clock 0 0 0 0
 -- Retrieval info: CONNECT: q 0 0 1 0 @q 0 0 1 0
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD1.vhd TRUE
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD1.inc FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD1.cmp FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD1.bsf FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL counterD1_inst.vhd FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_01.vhd TRUE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_01.inc FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_01.cmp FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_01.bsf FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL count_01_inst.vhd FALSE
 -- Retrieval info: LIB_FILE: lpm
