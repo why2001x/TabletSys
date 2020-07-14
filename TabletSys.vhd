@@ -32,14 +32,6 @@ entity TabletSys is
 		numO2        : out std_logic_vector(3 downto 0);
 		numO1        : out std_logic_vector(3 downto 0);
 
-<<<<<<< HEAD
-	bottlePrepare: dff PORT MAP(
-		PRN => VCC,
-		CLRN => VCC,
-		CLK => clkHI,
-		D => not BottleReady,
-		Q => BottleRequest
-=======
 		gLED, rLED   : out std_logic;    --状态表示，持续输出，至LED--
 
 		TabletReady  : out std_logic;    --药片请求，脉冲输出，至供给端--
@@ -49,7 +41,6 @@ entity TabletSys is
 
 		clkI         : in std_logic;     --时钟脉冲--	--时钟脉冲使用CP3(1Hz)--
 		clkHI        : in std_logic      --中频时钟输入(CP2)--	--时钟脉冲使用CP2(100Hz)--
->>>>>>> remotes/origin/n0tva1id-dev
 	);
 end TabletSys;
 
@@ -256,22 +247,6 @@ begin
 	----------------------------------------
 	ValidPill <= not(tabI or Error); --有效药片落下时，应当药瓶就绪，且不在被强制移动--	--条件由外侧保障--
 
-<<<<<<< HEAD
-	redLED <= haltK or finished;
-	greenLED <= (started and not finished);
-
-	--Process(finished,num,status,started)--红/绿灯控制
-	--begin
-	--	redLED<='0';
-	--	greenLED<='0';	
-	--	if(finished='1' or (num>"0001" and status="00") or (num>"0100" and status="10") or (haltK = VCC)) then
-	--		redLED<='1';
-	--	end if;
-	--	if(started='1' and status="11" and finished='0' ) then
-	--		greenLED<='1';
-	--	end if;
-	--end process;
-=======
 	PillsInBottle(2)(3 downto 2) <= (GND, GND);          --瓶内片数百位高2位恒0--
 	PillsInBottleCounter : counterDA port map(           --瓶内片数计数--
 		clkI           => ValidPill,                     --有效药片计数--
@@ -343,7 +318,6 @@ begin
 
 	------------------------------------------------------------
 	------------------------------------------------------------
->>>>>>> remotes/origin/n0tva1id-dev
 
 	--输出--
 	------------------------------------------------------------
