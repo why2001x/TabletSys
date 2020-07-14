@@ -38,6 +38,13 @@ COMPONENT counterD12 IS
 	);
 END COMPONENT;
 
+COMPONENT counterD13 IS
+	PORT (
+		clkI, clrKn: IN std_logic;
+		qO: OUT std_logic_vector(18 downto 0)
+	);
+END COMPONENT;
+
 COMPONENT count_01 IS
 	PORT (
 		aclr, clock: IN std_logic;
@@ -49,6 +56,13 @@ COMPONENT count_03 IS
 	PORT (
 		aclr, clock: IN std_logic;
 		q: OUT std_logic_vector (1 downto 0)
+	);
+END COMPONENT;
+
+COMPONENT count_07 IS
+	PORT (
+		aclr, clock: IN std_logic;
+		q: OUT std_logic_vector (2 downto 0)
 	);
 END COMPONENT;
 
