@@ -1,5 +1,5 @@
 @echo on
-echo Delete QuartusIIkk intermediate files
+echo Delete QuartusII intermediate files
 echo Begin deleting...
 if exist ".\db" rd /S /Q ".\db"
 if exist ".\incremental_db" rd /S /Q ".\incremental_db"
